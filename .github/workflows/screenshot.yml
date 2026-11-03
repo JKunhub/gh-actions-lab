@@ -1,0 +1,39 @@
+name: Screenshot Pages
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/screenshot.yml'
+
+jobs:
+  shot:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+      - name: 设置 Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: 安装 Playwright
+        run: |
+          pip install playwright
+          python -m playwright install --with-deps chromium
+      - name: 截取 Pages 页面
+        run: |
+          python - <<'PY'
+          from playwright.sync_api import sync_playwright
+          with sync_playwright() as p:
+              browser = p.chromium.launch()
+              page = browser.new_page(viewport={"width": 1400, "height": 1000})
+              page.goto("https://jkunhub.github.io/gh-actions-lab/", wait_until="networkidle")
+              page.screenshot(path="pages.png", full_page=True)
+              browser.close()
+          PY
+      - name: 上传截图
+        uses: actions/upload-artifact@v4
+        with:
+          name: pages-screenshot
+          path: pages.png
